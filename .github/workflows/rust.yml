@@ -10,18 +10,36 @@ permissions:
 
 jobs:
   release:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: udsaudio-linux-x86_64
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: udsaudio-macos-arm64
+
+    runs-on: ${{ matrix.os }}
 
     steps:
-    - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-    - name: Install system dependencies
-      run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
 
-    - name: Build release binary
-      run: cargo build --release
+      - name: Install Rust target
+        run: rustup target add ${{ matrix.target }}
 
-    - name: Upload udsaudio binary
-      uses: softprops/action-gh-release@v2
-      with:
-        files: target/release/udsaudio
+      - name: Build release binary
+        run: cargo build --release --target ${{ matrix.target }}
+
+      - name: Rename binary
+        run: |
+          mv target/${{ matrix.target }}/release/udsaudio ${{ matrix.artifact }}
+
+      - name: Upload release binary
+        uses: softprops/action-gh-release@v2
+        with:
+          files: ${{ matrix.artifact }}
