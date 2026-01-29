@@ -1,16 +1,12 @@
-name: Rust
+name: Rust Release
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-env:
-  CARGO_TERM_COLOR: always
+    tags:
+      - "v*"
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
@@ -19,8 +15,10 @@ jobs:
     - name: Install system dependencies
       run: sudo apt-get update && sudo apt-get install -y libasound2-dev pkg-config
 
-    - name: Build
-      run: cargo build --verbose
+    - name: Build release binary
+      run: cargo build --release
 
-    - name: Run tests
-      run: cargo test --verbose
+    - name: Upload udsaudio binary
+      uses: softprops/action-gh-release@v2
+      with:
+        files: target/release/udsaudio
